@@ -14,7 +14,7 @@ public class InMemoryCache<K, V> implements DataSource<K, V> {
     private final LRUCache<K, Future<V>> lruCache;
     private final Lock readLock;
     private final Lock writeLock;
-    private final ExecutorService executorService = Executors.newFixedThreadPool(5); // TODO
+    private final ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
     public InMemoryCache(int size, DataSource<K, V> delegate) {
         this.delegate = delegate;
