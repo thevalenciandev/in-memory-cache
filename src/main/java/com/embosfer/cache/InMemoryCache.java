@@ -4,24 +4,16 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class InMemoryCache<K, V> implements DataSource<K, V> {
 
     private final DataSource<K, V> delegate;
     private final LRUCache<K, Future<V>> lruCache;
-    private final Lock readLock;
-    private final Lock writeLock;
     private final ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
     public InMemoryCache(int size, DataSource<K, V> delegate) {
         this.delegate = delegate;
         this.lruCache = LRUCache.withSize(size);
-        ReadWriteLock lock = new ReentrantReadWriteLock();
-        this.readLock = lock.readLock();
-        this.writeLock = lock.writeLock();
     }
 
     public V getValueFor(K key) throws InterruptedException {
@@ -43,26 +35,16 @@ public class InMemoryCache<K, V> implements DataSource<K, V> {
         }
     }
 
-    private Future<V> cacheAndGetFutureFor(K key) {
-        writeLock.lock();
-        try {
-            if (lruCache.containsKey(key)) { // re-check as another thread might have got the write lock before we did
-                return lruCache.get(key);
-            }
-            Future<V> futureValue = executorService.submit(() -> delegate.getValueFor(key));
-            lruCache.put(key, futureValue);
-            return futureValue;
-        } finally {
-            writeLock.unlock();
+    private synchronized Future<V> cacheAndGetFutureFor(K key) {
+        if (lruCache.containsKey(key)) { // re-check as another thread might have got the write lock before we did
+            return lruCache.get(key);
         }
+        Future<V> futureValue = executorService.submit(() -> delegate.getValueFor(key));
+        lruCache.put(key, futureValue);
+        return futureValue;
     }
 
-    private Future<V> cachedFutureFor(K key) {
-        readLock.lock();
-        try {
-            return lruCache.get(key);
-        } finally {
-            readLock.unlock();
-        }
+    private synchronized Future<V> cachedFutureFor(K key) {
+        return lruCache.get(key);
     }
 }
