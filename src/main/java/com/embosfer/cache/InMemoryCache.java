@@ -26,7 +26,7 @@ public class InMemoryCache<K, V> implements DataSource<K, V> {
 
     public V getValueFor(K key) throws InterruptedException {
 
-        Future<V> futureValue = cachedValueFor(key);
+        Future<V> futureValue = cachedFutureFor(key);
         if (futureValue == null) {
             return valueOrBlowUp(cacheAndGetFutureFor(key), key);
         } else {
@@ -54,7 +54,7 @@ public class InMemoryCache<K, V> implements DataSource<K, V> {
         }
     }
 
-    private Future<V> cachedValueFor(K key) {
+    private Future<V> cachedFutureFor(K key) {
         readLock.lock();
         try {
             return lruCache.get(key);
