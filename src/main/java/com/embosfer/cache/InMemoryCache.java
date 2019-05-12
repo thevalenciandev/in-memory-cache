@@ -28,7 +28,7 @@ public class InMemoryCache<K, V> implements DataSource<K, V> {
 
         Future<V> futureValue = cachedValueFor(key);
         if (futureValue == null) {
-            return valueOrBlowUp(calculateAndCacheValueFor(key), key);
+            return valueOrBlowUp(cacheAndGetFutureFor(key), key);
         } else {
             return valueOrBlowUp(futureValue, key);
         }
@@ -39,11 +39,11 @@ public class InMemoryCache<K, V> implements DataSource<K, V> {
             return futureValue.get();
         } catch (ExecutionException e) {
             // TODO: log error
-            throw new RuntimeException("Something went wrong when getting cached value for " + key + ". " + e.getMessage());
+            throw new RuntimeException("Something went wrong when computing value for " + key + ". " + e.getMessage());
         }
     }
 
-    private Future<V> calculateAndCacheValueFor(K key) {
+    private Future<V> cacheAndGetFutureFor(K key) {
         writeLock.lock();
         try {
             Future<V> futureValue = executorService.submit(() -> delegate.getValueFor(key));
