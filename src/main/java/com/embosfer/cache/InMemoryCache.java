@@ -30,7 +30,7 @@ public class InMemoryCache<K, V> implements DataSource<K, V> {
         try {
             return futureValue.get();
         } catch (ExecutionException e) {
-            // TODO: log error
+            // TODO: an error should also be logged here
             throw new RuntimeException("Something went wrong when computing value for " + key + ". " + e.getMessage());
         }
     }

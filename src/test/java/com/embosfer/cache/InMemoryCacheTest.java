@@ -9,6 +9,8 @@ import org.mockito.junit.MockitoJUnitRunner;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Stream;
 
+import static com.embosfer.cache.ExceptionThrower.exceptionFrom;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.*;
@@ -89,6 +91,15 @@ public class InMemoryCacheTest {
         threadsDone.await();
 
         verify(slowDataSource, times(1)).getValueFor(key);
+    }
+
+    @Test
+    public void blowsUpIfUnderlyingDataSourceThrowsAnException() throws Exception {
+
+        when(slowDataSource.getValueFor("key")).thenThrow(new RuntimeException("BOOM!"));
+
+        assertThat(exceptionFrom(() -> inMemoryCache.getValueFor("key")),
+                instanceOf(RuntimeException.class));
     }
 
     private Runnable worker(CountDownLatch threadsReady, CountDownLatch threadsDone, String key) {
