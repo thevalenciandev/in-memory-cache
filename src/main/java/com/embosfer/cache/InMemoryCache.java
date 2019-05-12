@@ -46,7 +46,7 @@ public class InMemoryCache<K, V> implements DataSource<K, V> {
     private Future<V> cacheAndGetFutureFor(K key) {
         writeLock.lock();
         try {
-            if (lruCache.containsKey(key)) {
+            if (lruCache.containsKey(key)) { // re-check as another thread might have got the write lock before we did
                 return lruCache.get(key);
             }
             Future<V> futureValue = executorService.submit(() -> delegate.getValueFor(key));
