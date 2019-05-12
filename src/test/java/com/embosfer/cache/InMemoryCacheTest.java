@@ -80,23 +80,26 @@ public class InMemoryCacheTest {
         when(slowDataSource.getValueFor(key)).thenReturn("a-value");
 
         CountDownLatch threadsReady = new CountDownLatch(threadNumber);
+        CountDownLatch threadsDone = new CountDownLatch(threadNumber);
         for (int i = 0; i < threadNumber; i++) {
-            threads[i] = new Thread(worker(threadsReady, key), "thread-" + i);
+            threads[i] = new Thread(worker(threadsReady, threadsDone, key), "thread-" + i);
         }
 
         Stream.of(threads).forEach(Thread::start);
-        threadsReady.await();
+        threadsDone.await();
 
         verify(slowDataSource, times(1)).getValueFor(key);
     }
 
-    private Runnable worker(CountDownLatch threadsReady, String key) {
+    private Runnable worker(CountDownLatch threadsReady, CountDownLatch threadsDone, String key) {
         return () -> {
             threadsReady.countDown();
             try {
                 inMemoryCache.getValueFor(key);
             } catch (InterruptedException e) {
                 throw new RuntimeException("Issue while geting value for " + key);
+            } finally {
+                threadsDone.countDown();
             }
         };
     }
