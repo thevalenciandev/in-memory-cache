@@ -1,6 +1,5 @@
 package com.embosfer.cache;
 
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -16,7 +15,7 @@ public class InMemoryCache<K, V> implements DataSource<K, V> {
         this.lruCache = LRUCache.withSize(size);
     }
 
-    public V getValueFor(K key) throws InterruptedException {
+    public V getValueFor(K key) {
 
         Future<V> futureValue = cachedFutureFor(key);
         if (futureValue == null) {
@@ -26,10 +25,10 @@ public class InMemoryCache<K, V> implements DataSource<K, V> {
         }
     }
 
-    private V valueOrBlowUp(Future<V> futureValue, K key) throws InterruptedException {
+    private V valueOrBlowUp(Future<V> futureValue, K key) {
         try {
             return futureValue.get();
-        } catch (ExecutionException e) {
+        } catch (Throwable e) {
             // TODO: an error should also be logged here
             throw new RuntimeException("Something went wrong when computing value for " + key + ". " + e.getMessage());
         }
