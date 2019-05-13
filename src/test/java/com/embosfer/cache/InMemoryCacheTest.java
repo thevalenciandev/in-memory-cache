@@ -7,7 +7,6 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.stream.Stream;
 
 import static com.embosfer.cache.ExceptionThrower.exceptionFrom;
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -81,13 +80,14 @@ public class InMemoryCacheTest {
         String key = "key";
         when(slowDataSource.getValueFor(key)).thenReturn("a-value");
 
-        CountDownLatch threadsReady = new CountDownLatch(threadNumber);
+        CountDownLatch threadsReady = new CountDownLatch(1);
         CountDownLatch threadsDone = new CountDownLatch(threadNumber);
         for (int i = 0; i < threadNumber; i++) {
             threads[i] = new Thread(worker(threadsReady, threadsDone, key), "thread-" + i);
+            threads[i].start();
         }
 
-        Stream.of(threads).forEach(Thread::start);
+        threadsReady.countDown(); // release all threads
         threadsDone.await();
 
         verify(slowDataSource, times(1)).getValueFor(key);
@@ -104,8 +104,8 @@ public class InMemoryCacheTest {
 
     private Runnable worker(CountDownLatch threadsReady, CountDownLatch threadsDone, String key) {
         return () -> {
-            threadsReady.countDown();
             try {
+                threadsReady.await();
                 inMemoryCache.getValueFor(key);
             } catch (InterruptedException e) {
                 throw new RuntimeException("Issue while geting value for " + key);
