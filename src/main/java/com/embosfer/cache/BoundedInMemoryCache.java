@@ -4,13 +4,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-public class InMemoryCache<K, V> implements DataSource<K, V> {
+public class BoundedInMemoryCache<K, V> implements DataSource<K, V> {
 
     private final DataSource<K, V> delegate;
     private final LRUCache<K, Future<V>> lruCache;
     private final ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
-    public InMemoryCache(int size, DataSource<K, V> delegate) {
+    public BoundedInMemoryCache(int size, DataSource<K, V> delegate) {
         this.delegate = delegate;
         this.lruCache = LRUCache.withSize(size);
     }

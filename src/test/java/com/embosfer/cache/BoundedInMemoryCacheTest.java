@@ -15,16 +15,16 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
-public class InMemoryCacheTest {
+public class BoundedInMemoryCacheTest {
 
     @Mock
     DataSource<String, String> slowDataSource;
 
-    InMemoryCache<String, String> inMemoryCache;
+    BoundedInMemoryCache<String, String> inMemoryCache;
 
     @Before
     public void setUp() {
-        inMemoryCache = new InMemoryCache<>(5, slowDataSource);
+        inMemoryCache = new BoundedInMemoryCache<>(5, slowDataSource);
     }
 
     @Test
@@ -46,7 +46,7 @@ public class InMemoryCacheTest {
 
     @Test
     public void leastRecentlyUsedKeyIsEvictedUponSizeOverflow() throws Exception {
-        inMemoryCache = new InMemoryCache<>(2, slowDataSource);
+        inMemoryCache = new BoundedInMemoryCache<>(2, slowDataSource);
 
         String key1 = "key1";
         String key2 = "key2";
@@ -75,7 +75,7 @@ public class InMemoryCacheTest {
     public void isThreadSafe() throws Exception {
         int threadNumber = 50;
         Thread[] threads = new Thread[threadNumber];
-        inMemoryCache = new InMemoryCache<>(threadNumber, slowDataSource);
+        inMemoryCache = new BoundedInMemoryCache<>(threadNumber, slowDataSource);
 
         String key = "key";
         when(slowDataSource.getValueFor(key)).thenReturn("a-value");
