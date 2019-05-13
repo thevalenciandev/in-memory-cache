@@ -9,9 +9,9 @@ import org.mockito.junit.MockitoJUnitRunner;
 import java.util.concurrent.CountDownLatch;
 
 import static com.embosfer.cache.ExceptionThrower.exceptionFrom;
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.internal.matchers.ThrowableMessageMatcher.hasMessage;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -74,32 +74,33 @@ public class BoundedInMemoryCacheTest {
     @Test
     public void isThreadSafe() throws Exception {
         int threadNumber = 50;
+        String key = "key";
         Thread[] threads = new Thread[threadNumber];
         inMemoryCache = new BoundedInMemoryCache<>(threadNumber, slowDataSource);
 
-        String key = "key";
         when(slowDataSource.getValueFor(key)).thenReturn("a-value");
 
         CountDownLatch threadsReady = new CountDownLatch(1);
-        CountDownLatch threadsDone = new CountDownLatch(threadNumber);
+        CountDownLatch allThreadsFinished = new CountDownLatch(threadNumber);
         for (int i = 0; i < threadNumber; i++) {
-            threads[i] = new Thread(worker(threadsReady, threadsDone, key), "thread-" + i);
+            threads[i] = new Thread(worker(threadsReady, allThreadsFinished, key), "thread-" + i);
             threads[i].start();
         }
 
         threadsReady.countDown(); // release all threads
-        threadsDone.await();
+        allThreadsFinished.await();
 
         verify(slowDataSource, times(1)).getValueFor(key);
     }
 
     @Test
-    public void blowsUpIfUnderlyingDataSourceThrowsAnException() throws Exception {
+    public void blowsUpAndProvidesKeyInfoIfUnderlyingDataSourceThrowsAnException() throws Exception {
 
         when(slowDataSource.getValueFor("key")).thenThrow(new RuntimeException("BOOM!"));
 
         assertThat(exceptionFrom(() -> inMemoryCache.getValueFor("key")),
-                instanceOf(RuntimeException.class));
+                allOf(instanceOf(RuntimeException.class),
+                        hasMessage(containsString("key"))));
     }
 
     private Runnable worker(CountDownLatch threadsReady, CountDownLatch threadsDone, String key) {
