@@ -1,5 +1,6 @@
-package com.embosfer.cache;
+package com.thevalenciandev.cache;
 
+import org.hamcrest.MatcherAssert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -8,7 +9,6 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.concurrent.CountDownLatch;
 
-import static com.embosfer.cache.ExceptionThrower.exceptionFrom;
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.internal.matchers.ThrowableMessageMatcher.hasMessage;
@@ -98,7 +98,7 @@ public class BoundedInMemoryCacheTest {
 
         when(slowDataSource.getValueFor("key")).thenThrow(new RuntimeException("BOOM!"));
 
-        assertThat(exceptionFrom(() -> inMemoryCache.getValueFor("key")),
+        MatcherAssert.assertThat(ExceptionThrower.exceptionFrom(() -> inMemoryCache.getValueFor("key")),
                 allOf(instanceOf(RuntimeException.class),
                         hasMessage(containsString("key"))));
     }
