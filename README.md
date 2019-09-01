@@ -1,5 +1,7 @@
 # in-memory-cache
 
+[![Build Status](https://travis-ci.org/thevalenciandev/in-memory-cache.png?branch=master)](https://travis-ci.com/thevalenciandev/in-memory-cache)
+
 This project uses Gradle 5.4.1.
 You can build it executing "gradlew build".
 You can execute tests by executing "gradlew test"
